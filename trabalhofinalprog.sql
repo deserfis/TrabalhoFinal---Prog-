@@ -21,6 +21,29 @@ CREATE TABLE filme (
     genero_id INT NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (genero_id) REFERENCES genero (id)
+CREATE DATABASE projetofinal
+DEFAULT CHARACTER SET utf8
+DEFAULT COLLATE utf8_general_ci;
+
+USE projetofinal;
+
+CREATE TABLE genero (
+    id INT NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(30) NOT NULL,
+    PRIMARY KEY(id)
+)
+DEFAULT CHARACTER SET utf8
+DEFAULT COLLATE utf8_general_ci;
+
+CREATE TABLE filme (
+    id INT NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(30) NOT NULL,
+    ano_lancamento YEAR NOT NULL,
+    descricao TEXT NOT NULL,
+    nota DECIMAL(2,1) NOT NULL CHECK (nota BETWEEN 0.5 AND 5), 
+    genero_id INT NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (genero_id) REFERENCES genero (id)
 )
 DEFAULT CHARACTER SET utf8
 DEFAULT COLLATE utf8_general_ci;
@@ -46,7 +69,8 @@ VALUES
     ('Romance'),
     ('Histórico'),
     ('Mistério');
-
+    
+-- genero ficar igual o nome e id
 SELECT 
     f.id AS Filme_ID,
     f.nome AS Filme,
@@ -90,3 +114,29 @@ values
 
 -- VER OS FILMES
 -- SELECT * FROM FILME;
+
+-- id do filme ficar igual o nome
+SELECT 
+    a.id AS Avaliacao_ID,
+    a.usuario AS Usuario,
+    a.nota AS Nota,
+    a.comentario AS Comentario,
+    f.nome AS Filme
+FROM 
+    avaliacao a
+JOIN 
+    filme f
+ON 
+    a.filme_id = f.id;
+    
+-- VER OS IDS DE CADA FILME
+-- SELECT id, nome as 'nome do filme'
+-- FROM FILME;
+
+INSERT INTO avaliacao(usuario,nota,comentario,filme_id)
+values('usuario1','2.3','comentarioblablabla','1'), 
+('usuario2','2.3','comentarioblablabla','1'),
+('usuario3','5','amei','3');
+
+-- ver avaliacoes
+-- SELECT * FROM AVALIACAO;
