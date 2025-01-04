@@ -12,8 +12,8 @@ CREATE TABLE genero (
 
 CREATE TABLE filme (
     id INT NOT NULL AUTO_INCREMENT,
-    titulo VARCHAR(30) NOT NULL,
-    descricao TEXT NOT NULL,
+    titulo VARCHAR(50) NOT NULL,
+    descricao MEDIUMTEXT NOT NULL,
     ano YEAR NOT NULL,
     genero_id INT NOT NULL,
     nota DECIMAL(2,1) NOT NULL CHECK ((nota BETWEEN 0.5 AND 5) AND (MOD(nota * 10, 10) = 0 OR MOD(nota * 10, 10) = 5)), 
@@ -23,7 +23,7 @@ CREATE TABLE filme (
 CREATE TABLE avaliacao (
     id INT NOT NULL AUTO_INCREMENT,
     usuario VARCHAR(30) NOT NULL,
-    nota DECIMAL(2,1) NOT NULL CHECK (nota BETWEEN 0.5 AND 5),
+    nota DECIMAL(2,1) NOT NULL CHECK ((nota BETWEEN 0.5 AND 5) AND (MOD(nota * 10, 10) = 0 OR MOD(nota * 10, 10) = 5)),
     comentario VARCHAR(1000) NOT NULL,
     filme_id INT NOT NULL,
     PRIMARY KEY(id),
