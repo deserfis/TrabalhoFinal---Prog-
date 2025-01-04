@@ -12,11 +12,11 @@ CREATE TABLE genero (
 
 CREATE TABLE filme (
     id INT NOT NULL AUTO_INCREMENT,
-    nome VARCHAR(30) NOT NULL,
-    ano_lancamento YEAR NOT NULL,
+    titulo VARCHAR(30) NOT NULL,
     descricao TEXT NOT NULL,
-    nota DECIMAL(2,1) NOT NULL CHECK (nota BETWEEN 0.5 AND 5), 
+    ano YEAR NOT NULL,
     genero_id INT NOT NULL,
+    nota DECIMAL(2,1) NOT NULL CHECK ((nota BETWEEN 0.5 AND 5) AND (MOD(nota * 10, 10) = 0 OR MOD(nota * 10, 10) = 5)), 
     PRIMARY KEY (id),
     FOREIGN KEY (genero_id) REFERENCES genero (id));
 
@@ -43,8 +43,8 @@ VALUES
 -- genero ficar igual o nome e id
 SELECT 
     f.id AS Filme_ID,
-    f.nome AS Filme,
-    f.ano_lancamento AS Ano,
+    f.titulo AS Filme,
+    f.ano AS Ano,
     f.descricao AS Descricao,
     f.nota AS Nota,
     g.nome AS Genero
@@ -55,7 +55,7 @@ JOIN
 ON 
     f.genero_id = g.id;
 
-INSERT INTO filme(nome, ano_lancamento, descricao, nota, genero_id)
+INSERT INTO filme(nome, ano, descricao, nota, genero_id)
 values
 ('Castelo Animado','2005','Uma bruxa lança uma terrível maldição sobre a jovem Sophie transformando-a em uma velha. Desesperada,
  ela embarca em uma odisseia em busca do mago Howl, um misterioso feiticeiro que pode ajudá-la a reverter o feitiço.','5.0','1'),
@@ -85,13 +85,13 @@ values
 -- VER OS FILMES
 -- SELECT * FROM FILME;
 
--- id do filme ficar igual o nome
+-- id do filme ficar igual o titulo
 SELECT 
     a.id AS Avaliacao_ID,
     a.usuario AS Usuario,
     a.nota AS Nota,
     a.comentario AS Comentario,
-    f.nome AS Filme
+    f.titulo AS Filme
 FROM 
     avaliacao a
 JOIN 
@@ -100,7 +100,7 @@ ON
     a.filme_id = f.id;
     
 -- VER OS IDS DE CADA FILME
--- SELECT id, nome as 'nome do filme'
+-- SELECT id, titulo as 'titulo do filme'
 -- FROM FILME;
 
 INSERT INTO avaliacao(usuario,nota,comentario,filme_id)
