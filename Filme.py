@@ -58,20 +58,29 @@ class Filme:
     # Método para salvar o filme no banco de dados
     def salvar_filme(self, cursor):
         try:
+            # Busca o ID do gênero com base no nome
+            query = "SELECT id FROM generos WHERE nome = %s"
+            cursor.execute(query, (self.__genero,))
+            genero_result = cursor.fetchone()
+
+            if genero_result is None:
+                raise ValueError(f"Gênero '{self.__genero}' não encontrado na tabela de gêneros.")
+            
+            genero_id = genero_result[0]  # Obtém o ID do gênero
+            
             # Verifica as avaliações do filme e calcula a média das notas
             query = "SELECT AVG(nota) FROM avaliacoes WHERE filme=%s"
             cursor.execute(query, (self.__titulo,))
             resultado = cursor.fetchone()
-            
-            # Se houver avaliações, calcula a média; caso contrário, define a nota como 0.5
-            if resultado[0] is not None:
-                self.__nota = round(resultado[0], 1)  # Arredonda a nota para 1 casa decimal
-            else:
-                self.__nota = 0.5  # Caso não tenha avaliações, define a nota como 0.5
 
-            # Salva o filme com a nota calculada
+            if resultado[0] is not None:
+                self.__nota = round(resultado[0], 1)
+            else:
+                self.__nota = 0.5
+
+            # Salva o filme com o ID do gênero
             query = "INSERT INTO filmes (titulo, descricao, ano, genero, nota) VALUES (%s, %s, %s, %s, %s)"
-            values = (self.__titulo, self.__descricao, self.__ano, self.__genero, self.__nota)
+            values = (self.__titulo, self.__descricao, self.__ano, genero_id, self.__nota)
             cursor.execute(query, values)
         except Exception as e:
             print(f"Erro ao salvar filme: {e}")
