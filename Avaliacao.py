@@ -1,8 +1,12 @@
-from utils import atualizar_nota
+from utils import *
 from Filme import Filme
 class Avaliacao:
     def __init__(self, usuario, filme, nota_av, comentario=""):
-        # Convertendo os atributos de string para maiúsculas onde necessário
+# Verificar se a nota é válida
+        if not validar_nota(nota_av):
+            print("A nota deve ser estrelas inteiras ou meias. Ex: 1 (estrela); 2.5 (estrelas); 4 (estrelas).")
+            return  # Interrompe a criação do objeto, se a nota for inválida
+                # Convertendo os atributos de string para maiúsculas onde necessário
         self.__usuario = usuario.upper()  # Converte o usuário para maiúsculo
         self.__filme = filme.upper()  # Converte o filme para maiúsculo
         self.__nota_av = nota_av
@@ -38,28 +42,31 @@ class Avaliacao:
     # Método para salvar a avaliação no banco de dados
     def salvar(self, cursor):
         try:
-            query = "INSERT INTO avaliacoes (usuario, filme, nota, comentario) VALUES (%s, %s, %s, %s)"
-            values = (self.__usuario, self.__filme, self.__nota_av, self.__comentario)
-            cursor.execute(query, values)
-            
-            # Atualiza a nota do filme após a inserção da avaliação
-            Filme.atualizar_nota(cursor, self.__filme)
+            # Verifica se o usuário já avaliou este filme
+            avaliacao_existente = self.consultar_avaliacao(cursor, self.__usuario, self.__filme)
+            if avaliacao_existente:
+                resposta = input(f"Você já fez uma avaliação do filme '{self.__filme}', deseja editá-la? (s/n): ").strip().lower()
+                if resposta == 's':
+                    # Se o usuário deseja editar, chamamos o método de edição
+                    self.editar_avaliacao(cursor)
+                    return  # Sai do método após edição
+                else:
+                    print(f"A avaliação do filme '{self.__filme}' não será alterada.")
+                    return  # Sai do método sem salvar nada
+            else:
+                # Se não houver avaliação, insere uma nova
+                query = "INSERT INTO avaliacoes (usuario, filme, nota, comentario) VALUES (%s, %s, %s, %s)"
+                values = (self.__usuario, self.__filme, self.__nota_av, self.__comentario)
+                cursor.execute(query, values)
+
+                # Atualiza a nota do filme após a inserção da avaliação
+                Filme.atualizar_nota(cursor, self.__filme)
+                print(f"Avaliação do filme '{self.__filme}' realizada com sucesso!")
+        except ValueError as e:
+            print(f"Erro: {e}")
         except Exception as e:
             print(f"Erro ao salvar avaliação: {e}")
-
-    # Consultar avaliação de um filme por usuário
-    @staticmethod
-    def consultar_avaliacao(cursor, usuario, filme):
-        try:
-            usuario = usuario.upper()  # Converte o usuário para maiúsculo
-            filme = filme.upper()  # Converte o filme para maiúsculo
-            query = "SELECT * FROM avaliacoes WHERE usuario=%s AND filme=%s"
-            cursor.execute(query, (usuario, filme))
-            return cursor.fetchone()
-        except Exception as e:
-            print(f"Erro ao consultar avaliação: {e}")
-            return None
-
+            
     # Excluir avaliação
     def excluir(self, cursor):
         try:
@@ -85,16 +92,17 @@ class Avaliacao:
             if opcao == "1":
                 try:
                     nova_nota = float(input("Digite a nova nota (entre 0.5 e 5.0): ").strip())
-                    self.nota_av = nova_nota  # Usando a validação do setter de nota
-                    confirmacao = input(f"Você tem certeza que deseja alterar a nota para '{nova_nota}'? (s/n): ").strip().lower()
-                    if confirmacao == "s":
-                        # Atualiza a avaliação no banco de dados
-                        query = "UPDATE avaliacoes SET nota=%s WHERE usuario=%s AND filme=%s"
-                        values = (self.__nota_av, self.__usuario, self.__filme)
-                        cursor.execute(query, values)
-                        print(f"Nota alterada para: {self.__nota_av}")
-                        # Atualiza a nota do filme após a alteração
-                        Filme.atualizar_nota(cursor, self.__filme)
+                    if validar_nota(nova_nota):
+                        self.nota_av = nova_nota  # Usando a validação do setter de nota
+                        confirmacao = input(f"Você tem certeza que deseja alterar a nota para '{nova_nota}'? (s/n): ").strip().lower()
+                        if confirmacao == "s":
+                            # Atualiza a avaliação no banco de dados
+                            query = "UPDATE avaliacoes SET nota=%s WHERE usuario=%s AND filme=%s"
+                            values = (self.__nota_av, self.__usuario, self.__filme)
+                            cursor.execute(query, values)
+                            print(f"Nota alterada para: {self.__nota_av}")
+                            # Atualiza a nota do filme após a alteração
+                            Filme.atualizar_nota(cursor, self.__filme)
                 except ValueError:
                     print("Por favor, insira uma nota válida.")
             
