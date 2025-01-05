@@ -81,7 +81,7 @@ class Avaliacao:
             print("2. Comentário")
             print("3. Cancelar edição")
             opcao = input("Escolha uma opção (1-3): ").strip()
-            
+
             if opcao == "1":
                 try:
                     nova_nota = float(input("Digite a nova nota (entre 0.5 e 5.0): ").strip())
