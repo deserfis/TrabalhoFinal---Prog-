@@ -1,6 +1,6 @@
 # Função para atualizar a nota do filme
 def atualizar_nota(cursor, filme):
-    query = "SELECT AVG(nota) FROM avaliacoes WHERE filme_id=%s"
+    query = "SELECT AVG(nota) FROM avaliacoes WHERE filme=%s"
     cursor.execute(query, (filme,))
     resultado = cursor.fetchone()
     
@@ -13,3 +13,8 @@ def atualizar_nota(cursor, filme):
 def pedir_senha():
     senha = input("Digite a senha para continuar: ").strip()
     return senha == "root"
+
+def validar_nota(nota):
+    if (nota * 10) % 10 == 0 or (nota * 10) % 10 == 5:
+        return True
+    return False
