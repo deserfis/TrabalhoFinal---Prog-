@@ -59,7 +59,7 @@ class Filme:
     def salvar_filme(self, cursor):
         try:
             # Busca o ID do gênero com base no nome
-            query = "SELECT id FROM generos WHERE nome = %s"
+            query = "SELECT id FROM genero WHERE nome = %s"
             cursor.execute(query, (self.__genero,))
             genero_result = cursor.fetchone()
 
@@ -69,7 +69,7 @@ class Filme:
             genero_id = genero_result[0]  # Obtém o ID do gênero
             
             # Verifica as avaliações do filme e calcula a média das notas
-            query = "SELECT AVG(nota) FROM avaliacoes WHERE filme=%s"
+            query = "SELECT AVG(nota) FROM avaliacao WHERE filme=%s"
             cursor.execute(query, (self.__titulo,))
             resultado = cursor.fetchone()
 
@@ -79,7 +79,7 @@ class Filme:
                 self.__nota = 0.5
 
             # Salva o filme com o ID do gênero
-            query = "INSERT INTO filmes (titulo, descricao, ano, genero_id, nota) VALUES (%s, %s, %s, %s, %s)"
+            query = "INSERT INTO filme (titulo, descricao, ano, genero_id, nota) VALUES (%s, %s, %s, %s, %s)"
             values = (self.__titulo, self.__descricao, self.__ano, genero_id, self.__nota)
             cursor.execute(query, values)
         except Exception as e:
@@ -90,7 +90,7 @@ class Filme:
     def buscar_por_nome(cursor, nome):
         try:
             nome = nome.upper()
-            query = "SELECT * FROM filmes WHERE titulo LIKE %s"
+            query = "SELECT * FROM filme WHERE titulo LIKE %s"
             cursor.execute(query, (f"%{nome}%",))
             return cursor.fetchall()  # Retorna todos os filmes encontrados
         except Exception as e:
@@ -162,7 +162,7 @@ class Filme:
         # Após a atualização, atualiza os dados no banco de dados
         if self.pedir_senha():
             try:
-                query = "UPDATE filmes SET descricao=%s, ano=%s, genero=%s, nota=%s WHERE titulo=%s"
+                query = "UPDATE filme SET descricao=%s, ano=%s, genero=%s, nota=%s WHERE titulo=%s"
                 values = (self.__descricao, self.__ano, self.__genero, self.__nota, self.__titulo)
                 cursor.execute(query, values)
                 print(f"Filme '{self.__titulo}' atualizado com sucesso!")
@@ -181,7 +181,7 @@ class Filme:
             return
         
         try:
-            query = "DELETE FROM filmes WHERE titulo=%s"
+            query = "DELETE FROM filme WHERE titulo=%s"
             cursor.execute(query, (self.__titulo,))
             print(f"Filme '{self.__titulo}' excluído com sucesso!")
         except Exception as e:
