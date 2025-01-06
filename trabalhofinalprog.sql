@@ -23,7 +23,7 @@ CREATE TABLE filme (
 CREATE TABLE avaliacao (
     id INT NOT NULL AUTO_INCREMENT,
     usuario VARCHAR(30) NOT NULL,
-    nota DECIMAL(2,1) NOT NULL CHECK ((nota BETWEEN 0.5 AND 5) AND (MOD(nota * 10, 10) = 0 OR MOD(nota * 10, 10) = 5)),
+    nota_av DECIMAL(2,1) NOT NULL CHECK ((nota_av BETWEEN 0.5 AND 5) AND (MOD(nota_av * 10, 10) = 0 OR MOD(nota_av * 10, 10) = 5)),
     comentario VARCHAR(1000) NOT NULL,
     filme_id INT NOT NULL,
     PRIMARY KEY(id),
@@ -46,7 +46,7 @@ SELECT
     f.titulo AS Filme,
     f.ano AS Ano,
     f.descricao AS Descricao,
-    f.nota AS Nota,
+    f.nota AS Nota Média,
     g.nome AS Genero
 FROM 
     filme f
@@ -89,7 +89,7 @@ values
 SELECT 
     a.id AS Avaliacao_ID,
     a.usuario AS Usuario,
-    a.nota AS Nota,
+    a.nota_av AS Nota,
     a.comentario AS Comentario,
     f.titulo AS Filme
 FROM 
@@ -103,7 +103,7 @@ ON
 -- SELECT id, titulo as 'titulo do filme'
 -- FROM FILME;
 
-INSERT INTO avaliacao(usuario,nota,comentario,filme_id)
+INSERT INTO avaliacao(usuario,nota_av,comentario,filme_id)
 values('usuario1','2.3','comentarioblablabla','1'), 
 ('usuario2','2.3','comentarioblablabla','1'),
 ('usuario3','5','amei','3');
