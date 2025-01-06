@@ -16,7 +16,7 @@ CREATE TABLE filme (
     descricao MEDIUMTEXT NOT NULL,
     ano YEAR NOT NULL,
     genero_id INT NOT NULL,
-    nota DECIMAL(2,1) NOT NULL CHECK ((nota BETWEEN 0.5 AND 5) AND (MOD(nota * 10, 10) = 0 OR MOD(nota * 10, 10) = 5)), 
+    nota DECIMAL(2,1) NOT NULL CHECK (nota BETWEEN 0.5 AND 5), 
     PRIMARY KEY (id),
     FOREIGN KEY (genero_id) REFERENCES genero (id));
 
