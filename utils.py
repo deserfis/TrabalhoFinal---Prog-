@@ -1,6 +1,6 @@
 # Função para atualizar a nota do filme
 def atualizar_nota(cursor, filme):
-    query = "SELECT AVG(nota) FROM avaliacoes WHERE filme=%s"
+    query = "SELECT AVG(nota) FROM avaliacoes WHERE filme_id=%s"
     cursor.execute(query, (filme,))
     resultado = cursor.fetchone()
     
