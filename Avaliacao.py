@@ -64,7 +64,7 @@ class Avaliacao:
                 
                 filme_id = filme_result[0]  # Obtém o ID do gênero
                 # Se não houver avaliação, insere uma nova
-                query = "INSERT INTO avaliacoes (usuario, filme, nota, comentario) VALUES (%s, %s, %s, %s)"
+                query = "INSERT INTO avaliacao (usuario, filme, nota, comentario) VALUES (%s, %s, %s, %s)"
                 values = (self.__usuario, filme_id, self.__nota_av, self.__comentario)
                 cursor.execute(query, values)
 
@@ -79,7 +79,7 @@ class Avaliacao:
     # Excluir avaliação
     def excluir(self, cursor):
         try:
-            query = "DELETE FROM avaliacoes WHERE usuario=%s AND filme=%s"
+            query = "DELETE FROM avaliacao WHERE usuario=%s AND filme=%s"
             cursor.execute(query, (self.__usuario, self.__filme))
             
             # Atualiza a nota do filme após a exclusão da avaliação
@@ -106,7 +106,7 @@ class Avaliacao:
                         confirmacao = input(f"Você tem certeza que deseja alterar a nota para '{nova_nota}'? (s/n): ").strip().lower()
                         if confirmacao == "s":
                             # Atualiza a avaliação no banco de dados
-                            query = "UPDATE avaliacoes SET nota=%s WHERE usuario=%s AND filme=%s"
+                            query = "UPDATE avaliacao SET nota=%s WHERE usuario=%s AND filme=%s"
                             values = (self.__nota_av, self.__usuario, self.__filme)
                             cursor.execute(query, values)
                             print(f"Nota alterada para: {self.__nota_av}")
@@ -120,7 +120,7 @@ class Avaliacao:
                 confirmacao = input(f"Você tem certeza que deseja alterar o comentário? (s/n): ").strip().lower()
                 if confirmacao == "s":
                     # Atualiza a avaliação no banco de dados
-                    query = "UPDATE avaliacoes SET comentario=%s WHERE usuario=%s AND filme=%s"
+                    query = "UPDATE avaliacao SET comentario=%s WHERE usuario=%s AND filme=%s"
                     values = (nova_descricao, self.__usuario, self.__filme)
                     cursor.execute(query, values)
                     self.__comentario = nova_descricao
