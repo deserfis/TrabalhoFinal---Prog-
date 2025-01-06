@@ -58,30 +58,43 @@ class Filme:
     # Método para salvar o filme no banco de dados
     def salvar_filme(self, cursor):
         try:
-            # Busca o ID do gênero com base no nome
-            query = "SELECT id FROM genero WHERE nome = %s"
-            cursor.execute(query, (self.__genero,))
-            genero_result = cursor.fetchone()
-
-            if genero_result is None:
-                raise ValueError(f"Gênero '{self.__genero}' não encontrado na tabela de gêneros.")
-            
-            genero_id = genero_result[0]  # Obtém o ID do gênero
-            
-            # Verifica as avaliações do filme e calcula a média das notas
-            query = "SELECT AVG(nota) FROM avaliacao WHERE filme=%s"
-            cursor.execute(query, (self.__titulo,))
-            resultado = cursor.fetchone()
-
-            if resultado[0] is not None:
-                self.__nota = round(resultado[0], 1)
+            # Verifica se o filme já foi salvo anteriormente
+            filme_existente = self.buscar_por_nome(cursor, self.__titulo)
+            if filme_existente:
+                resposta = input(f"O filme '{self.__titulo}' já foi registrado no banco, deseja editá-lo? (s/n): ").strip().lower()
+                if resposta == 's':
+                    # Se o usuário deseja editar, chamamos o método de edição
+                    self.atualizar(cursor)
+                    return  # Sai do método após edição
+                else:
+                    print(f"O filme '{self.__titulo}' não será alterado.")
+                    return  # Sai do método sem salvar nada
+                
             else:
-                self.__nota = 0.5
+                # Busca o ID do gênero com base no nome
+                query = "SELECT id FROM genero WHERE nome = %s"
+                cursor.execute(query, (self.__genero,))
+                genero_result = cursor.fetchone()
 
-            # Salva o filme com o ID do gênero
-            query = "INSERT INTO filme (titulo, descricao, ano, genero_id, nota) VALUES (%s, %s, %s, %s, %s)"
-            values = (self.__titulo, self.__descricao, self.__ano, genero_id, self.__nota)
-            cursor.execute(query, values)
+                if genero_result is None:
+                    raise ValueError(f"Gênero '{self.__genero}' não encontrado na tabela de gêneros.")
+                
+                genero_id = genero_result[0]  # Obtém o ID do gênero
+                
+                # Verifica as avaliações do filme e calcula a média das notas
+                query = "SELECT AVG(nota) FROM avaliacao WHERE filme=%s"
+                cursor.execute(query, (self.__titulo,))
+                resultado = cursor.fetchone()
+
+                if resultado[0] is not None:
+                    self.__nota = round(resultado[0], 1)
+                else:
+                    self.__nota = 0.5
+
+                # Salva o filme com o ID do gênero
+                query = "INSERT INTO filme (titulo, descricao, ano, genero_id, nota) VALUES (%s, %s, %s, %s, %s)"
+                values = (self.__titulo, self.__descricao, self.__ano, genero_id, self.__nota)
+                cursor.execute(query, values)
         except Exception as e:
             print(f"Erro ao salvar filme: {e}")
             
@@ -96,10 +109,14 @@ class Filme:
         except Exception as e:
             print(f"Erro ao buscar filme: {e}")
             return None
-        
-    # Método de atualização que altera tanto o objeto quanto o banco de dados
-    def atualizar_filme(self, cursor): #falta editar para interagir com o banco
+
+    # Método de atualização com senha e persistência no banco
+    def atualizar(self, cursor):
         print(f"\nVocê está atualizando o filme: {self.__titulo}\n")
+        
+        if not self.pedir_senha():
+            print("Acesso negado. Senha incorreta!")
+            return
         
         while True:
             print("\nO que você deseja atualizar?")
@@ -160,19 +177,16 @@ class Filme:
                 break
 
         # Após a atualização, atualiza os dados no banco de dados
-        if self.pedir_senha():
-            try:
-                query = "UPDATE filme SET descricao=%s, ano=%s, genero=%s, nota=%s WHERE titulo=%s"
-                values = (self.__descricao, self.__ano, self.__genero, self.__nota, self.__titulo)
-                cursor.execute(query, values)
-                print(f"Filme '{self.__titulo}' atualizado com sucesso!")
-                
-                # Atualiza a nota do filme após as alterações
-                self.atualizar_nota(cursor)
-            except Exception as e:
-                print(f"Erro ao atualizar filme: {e}")
-        else:
-            print("Senha incorreta! Acesso negado.")
+        try:
+            query = "UPDATE filme SET descricao=%s, ano=%s, genero=%s, nota=%s WHERE titulo=%s"
+            values = (self.__descricao, self.__ano, self.__genero, self.__nota, self.__titulo)
+            cursor.execute(query, values)
+            print(f"Filme '{self.__titulo}' atualizado com sucesso!")
+            
+            # Atualiza a nota do filme após as alterações
+            self.atualizar_nota(cursor)
+        except Exception as e:
+            print(f"Erro ao atualizar filme: {e}")
 
     # Excluir um filme do banco de dados
     def excluir_filme(self, cursor):
