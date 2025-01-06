@@ -54,13 +54,22 @@ class Avaliacao:
                     print(f"A avaliação do filme '{self.__filme}' não será alterada.")
                     return  # Sai do método sem salvar nada
             else:
+                    # Busca o ID do filme com base no nome
+                query = "SELECT id FROM filme WHERE nome = %s"
+                cursor.execute(query, (self.__genero,))
+                filme_result = cursor.fetchone()
+    
+                if genero_result is None:
+                    raise ValueError(f"Filme '{self.__filme}' não encontrado na tabela de filmes.")
+                
+                filme_id = filme_result[0]  # Obtém o ID do gênero
                 # Se não houver avaliação, insere uma nova
                 query = "INSERT INTO avaliacoes (usuario, filme, nota, comentario) VALUES (%s, %s, %s, %s)"
-                values = (self.__usuario, self.__filme, self.__nota_av, self.__comentario)
+                values = (self.__usuario, filme_id, self.__nota_av, self.__comentario)
                 cursor.execute(query, values)
 
                 # Atualiza a nota do filme após a inserção da avaliação
-                Filme.atualizar_nota(cursor, self.__filme)
+                Filme.atualizar_nota(cursor, filme_id)
                 print(f"Avaliação do filme '{self.__filme}' realizada com sucesso!")
         except ValueError as e:
             print(f"Erro: {e}")
