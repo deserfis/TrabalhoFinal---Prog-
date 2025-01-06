@@ -56,7 +56,7 @@ class Avaliacao:
             else:
                     # Busca o ID do filme com base no nome
                 query = "SELECT id FROM filme WHERE nome = %s"
-                cursor.execute(query, (self.__genero,))
+                cursor.execute(query, (self.__filme,))
                 filme_result = cursor.fetchone()
     
                 if genero_result is None:
