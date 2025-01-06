@@ -98,7 +98,7 @@ class Filme:
             return None
         
     # Método de atualização que altera tanto o objeto quanto o banco de dados
-    def atualizar_filme(self, cursor):
+    def atualizar_filme(self, cursor): #falta editar para interagir com o banco
         print(f"\nVocê está atualizando o filme: {self.__titulo}\n")
         
         while True:
