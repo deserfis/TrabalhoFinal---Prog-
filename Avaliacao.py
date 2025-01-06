@@ -48,7 +48,7 @@ class Avaliacao:
                 resposta = input(f"Você já fez uma avaliação do filme '{self.__filme}', deseja editá-la? (s/n): ").strip().lower()
                 if resposta == 's':
                     # Se o usuário deseja editar, chamamos o método de edição
-                    self.editar_avaliacao(cursor)
+                    self.editar(cursor)
                     return  # Sai do método após edição
                 else:
                     print(f"A avaliação do filme '{self.__filme}' não será alterada.")
@@ -75,22 +75,36 @@ class Avaliacao:
             print(f"Erro: {e}")
         except Exception as e:
             print(f"Erro ao salvar avaliação: {e}")
-            
-    # Excluir avaliação
-    def excluir(self, cursor):
-        try:
-            query = "DELETE FROM avaliacao WHERE usuario=%s AND filme=%s"
-            cursor.execute(query, (self.__usuario, self.__filme))
-            
-            # Atualiza a nota do filme após a exclusão da avaliação
-            Filme.atualizar_nota(cursor, self.__filme)
-        except Exception as e:
-            print(f"Erro ao excluir avaliação: {e}")
 
-    # Método para editar a avaliação
-    def editar_avaliacao(self, cursor):
+    # Método para consultar uma avaliação existente de um usuário para um filme
+    def consultar_avaliacao(self, cursor, usuario, filme):
+        try:
+            # Realiza a consulta no banco de dados usando LIKE para o título do filme
+            query = "SELECT a.nota, a.comentario, f.titulo " \
+                    "FROM avaliacao a " \
+                    "JOIN filme f ON a.filme = f.id " \
+                    "WHERE a.usuario=%s AND f.titulo LIKE %s"
+            cursor.execute(query, (usuario.upper(), f"%{filme.upper()}%"))  # Usando LIKE para o título
+            resultado = cursor.fetchone()  # Retorna a primeira linha (se houver)
+
+            if resultado:
+                # Caso exista, retorna os dados da avaliação (nota, comentário, nome do filme)
+                nota, comentario, filme_nome = resultado
+                return {"usuario": usuario, "filme": filme_nome, "nota": nota, "\ncomentario": comentario}
+            else:
+                # Caso não exista, retorna None
+                return None
+        except Exception as e:
+            print(f"Erro ao consultar avaliação: {e}")
+            return None
+
+    # Método para editar a avaliação e atualizar no banco de dados no final
+    def editar(self, cursor):
         print(f"\nVocê está editando a avaliação do filme: {self.__filme} por {self.__usuario}")
         
+        nota_editada = False
+        comentario_editado = False
+
         while True:
             print("\nO que você deseja editar?")
             print("1. Nota")
@@ -105,27 +119,21 @@ class Avaliacao:
                         self.nota_av = nova_nota  # Usando a validação do setter de nota
                         confirmacao = input(f"Você tem certeza que deseja alterar a nota para '{nova_nota}'? (s/n): ").strip().lower()
                         if confirmacao == "s":
-                            # Atualiza a avaliação no banco de dados
-                            query = "UPDATE avaliacao SET nota=%s WHERE usuario=%s AND filme=%s"
-                            values = (self.__nota_av, self.__usuario, self.__filme)
-                            cursor.execute(query, values)
+                            nota_editada = True  # Marca que a nota foi editada
                             print(f"Nota alterada para: {self.__nota_av}")
-                            # Atualiza a nota do filme após a alteração
-                            Filme.atualizar_nota(cursor, self.__filme)
+                    else:
+                        print("Por favor, insira uma nota válida.")
                 except ValueError:
                     print("Por favor, insira uma nota válida.")
-            
+
             elif opcao == "2":
                 nova_descricao = input("Digite o novo comentário: ").strip()
                 confirmacao = input(f"Você tem certeza que deseja alterar o comentário? (s/n): ").strip().lower()
                 if confirmacao == "s":
-                    # Atualiza a avaliação no banco de dados
-                    query = "UPDATE avaliacao SET comentario=%s WHERE usuario=%s AND filme=%s"
-                    values = (nova_descricao, self.__usuario, self.__filme)
-                    cursor.execute(query, values)
                     self.__comentario = nova_descricao
+                    comentario_editado = True  # Marca que o comentário foi editado
                     print("Comentário alterado.")
-            
+
             elif opcao == "3":
                 print("Edição cancelada.")
                 break
@@ -138,3 +146,27 @@ class Avaliacao:
             if continuar != "s":
                 break
 
+        # Após todas as edições, atualiza os dados no banco de dados
+        if nota_editada or comentario_editado:
+            try:
+                # Atualiza a avaliação no banco de dados
+                query = "UPDATE avaliacao SET nota=%s, comentario=%s WHERE usuario=%s AND filme=%s"
+                values = (self.__nota_av, self.__comentario, self.__usuario, self.__filme)
+                cursor.execute(query, values)
+                print(f"Avaliação do filme '{self.__filme}' atualizada com sucesso!")
+                
+                # Atualiza a nota do filme após a alteração da avaliação
+                Filme.atualizar_nota(cursor, self.__filme)
+            except Exception as e:
+                print(f"Erro ao atualizar avaliação: {e}")
+  
+    # Excluir avaliação
+    def excluir(self, cursor):
+        try:
+            query = "DELETE FROM avaliacao WHERE usuario=%s AND filme=%s"
+            cursor.execute(query, (self.__usuario, self.__filme))
+            
+            # Atualiza a nota do filme após a exclusão da avaliação
+            Filme.atualizar_nota(cursor, self.__filme)
+        except Exception as e:
+            print(f"Erro ao excluir avaliação: {e}")
