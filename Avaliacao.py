@@ -55,11 +55,11 @@ class Avaliacao:
                     return  # Sai do método sem salvar nada
             else:
                     # Busca o ID do filme com base no nome
-                query = "SELECT id FROM filme WHERE nome = %s"
-                cursor.execute(query, (self.__filme,))
+                query = "SELECT id FROM filme WHERE nome LIKE %s"
+                cursor.execute(query, (f"%{self.__filme}%",))
                 filme_result = cursor.fetchone()
     
-                if genero_result is None:
+                if filme_result is None:
                     raise ValueError(f"Filme '{self.__filme}' não encontrado na tabela de filmes.")
                 
                 filme_id = filme_result[0]  # Obtém o ID do gênero
