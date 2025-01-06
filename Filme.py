@@ -79,7 +79,7 @@ class Filme:
                 self.__nota = 0.5
 
             # Salva o filme com o ID do gênero
-            query = "INSERT INTO filmes (titulo, descricao, ano, genero, nota) VALUES (%s, %s, %s, %s, %s)"
+            query = "INSERT INTO filmes (titulo, descricao, ano, genero_id, nota) VALUES (%s, %s, %s, %s, %s)"
             values = (self.__titulo, self.__descricao, self.__ano, genero_id, self.__nota)
             cursor.execute(query, values)
         except Exception as e:
