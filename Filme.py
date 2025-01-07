@@ -6,7 +6,7 @@ class Filme:
         self.__titulo = titulo.upper()
         self.__descricao = descricao  # Mantém a descrição como está
         self.__ano = ano
-        self.__genero = genero.upper()  # Converte o gênero para maiúsculo
+        self.__genero = genero.upper()
         self.__nota = nota  # Nota padrão de 0.5
 
     @property
@@ -23,7 +23,7 @@ class Filme:
 
     @descricao.setter
     def descricao(self, value):
-        self.__descricao = value  # Mantém a descrição como está
+        self.__descricao = value
 
     @property
     def ano(self):
@@ -57,41 +57,36 @@ class Filme:
 
     # Método para salvar o filme no banco de dados
     def salvar_filme(self, cursor):
+        if not self.pedir_senha(): # Requisita senha para o acesso
+            print("Acesso negado. Senha incorreta!")
+            return
         try:
             # Verifica se o filme já foi salvo anteriormente
             filme_existente = self.buscar_por_nome(cursor, self.__titulo)
             if filme_existente:
                 resposta = input(f"O filme '{self.__titulo}' já foi registrado no banco, deseja editá-lo? (s/n): ").strip().lower()
                 if resposta == 's':
-                    # Se o usuário deseja editar, chamamos o método de edição
+                    # Se o usuário deseja editar, chama o método de edição
                     self.atualizar(cursor)
                     return  # Sai do método após edição
                 else:
                     print(f"O filme '{self.__titulo}' não será alterado.")
                     return  # Sai do método sem salvar nada
-                
+            #Se o filme não existe, prossegue
             else:
-                # Busca o ID do gênero com base no nome
-                query = "SELECT id FROM genero WHERE nome = %s"
-                cursor.execute(query, (self.__genero,))
-                genero_result = cursor.fetchone()
+                genero_id = Filme.buscar_id_genero(self.__genero)#Trpca o nome do gênero pelo id
 
-                if genero_result is None:
-                    raise ValueError(f"Gênero '{self.__genero}' não encontrado na tabela de gêneros.")
-                
-                genero_id = genero_result[0]  # Obtém o ID do gênero
-                
                 # Verifica as avaliações do filme e calcula a média das notas
                 query = "SELECT AVG(nota) FROM avaliacao WHERE filme=%s"
                 cursor.execute(query, (self.__titulo,))
                 resultado = cursor.fetchone()
-
+                #Se existem avaliações, pega a média e arredonda para uma casa decimal
                 if resultado[0] is not None:
                     self.__nota = round(resultado[0], 1)
-                else:
+                else: #Se não existe, coloca o valor padrão
                     self.__nota = 0.5
 
-                # Salva o filme com o ID do gênero
+                # Salva o filme (com o ID do gênero)
                 query = "INSERT INTO filme (titulo, descricao, ano, genero_id, nota) VALUES (%s, %s, %s, %s, %s)"
                 values = (self.__titulo, self.__descricao, self.__ano, genero_id, self.__nota)
                 cursor.execute(query, values)
@@ -103,7 +98,7 @@ class Filme:
     def buscar_por_nome(cursor, nome):
         try:
             nome = nome.upper()
-            query = "SELECT * FROM filme WHERE titulo LIKE %s"
+            query = "SELECT f.titulo, f.ano, g.nome, f.nota, f.descricao FROM filme f JOIN genero g ON f.genero_id = g.id WHERE f.titulo LIKE %s;" #Pega as informações do filme, inclusive o nome do gênero em vez do id
             cursor.execute(query, (f"%{nome}%",))
             return cursor.fetchall()  # Retorna todos os filmes encontrados
         except Exception as e:
@@ -114,33 +109,32 @@ class Filme:
     def atualizar(self, cursor):
         print(f"\nVocê está atualizando o filme: {self.__titulo}\n")
         
-        if not self.pedir_senha():
+        if not self.pedir_senha(): # Requisita senha para o acesso
             print("Acesso negado. Senha incorreta!")
             return
         
-        while True:
+        while True: #Exibe uma lista do que o usuário pode editar
             print("\nO que você deseja atualizar?")
             print("1. Título")
             print("2. Descrição")
             print("3. Ano")
             print("4. Gênero")
-            print("5. Nota")
-            print("6. Cancelar atualização")
-            opcao = input("Escolha uma opção (1-6): ").strip()
+            print("5. Cancelar atualização")
+            opcao = input("Escolha uma opção (1-5): ").strip()
             
-            if opcao == "1":
+            if opcao == "1":#Edita título
                 novo_titulo = input("Digite o novo título: ").strip()
                 confirmacao = input(f"Você tem certeza que deseja alterar o título para '{novo_titulo}'? (s/n): ").strip().lower()
                 if confirmacao == "s":
                     self.__titulo = novo_titulo.upper()
                     print(f"Título alterado para: {self.__titulo}")
-            elif opcao == "2":
+            elif opcao == "2":#Edita descrição
                 nova_descricao = input("Digite a nova descrição: ").strip()
                 confirmacao = input(f"Você tem certeza que deseja alterar a descrição? (s/n): ").strip().lower()
                 if confirmacao == "s":
                     self.__descricao = nova_descricao
                     print("Descrição alterada.")
-            elif opcao == "3":
+            elif opcao == "3":#Edita ano
                 try:
                     novo_ano = int(input("Digite o novo ano: ").strip())
                     confirmacao = input(f"Você tem certeza que deseja alterar o ano para '{novo_ano}'? (s/n): ").strip().lower()
@@ -149,22 +143,13 @@ class Filme:
                         print(f"Ano alterado para: {self.__ano}")
                 except ValueError:
                     print("Por favor, insira um ano válido.")
-            elif opcao == "4":
+            elif opcao == "4":#Edita gênero
                 novo_genero = input("Digite o novo gênero: ").strip()
                 confirmacao = input(f"Você tem certeza que deseja alterar o gênero para '{novo_genero}'? (s/n): ").strip().lower()
                 if confirmacao == "s":
                     self.__genero = novo_genero.upper()
                     print(f"Gênero alterado para: {self.__genero}")
             elif opcao == "5":
-                try:
-                    nova_nota = float(input("Digite a nova nota (entre 0.5 e 5.0): ").strip())
-                    self.nota = nova_nota  # Usando o setter de nota para validação
-                    confirmacao = input(f"Você tem certeza que deseja alterar a nota para '{nova_nota}'? (s/n): ").strip().lower()
-                    if confirmacao == "s":
-                        print(f"Nota alterada para: {self.__nota}")
-                except ValueError:
-                    print("Por favor, insira uma nota válida.")
-            elif opcao == "6":
                 print("Atualização cancelada.")
                 break
             else:
@@ -178,8 +163,11 @@ class Filme:
 
         # Após a atualização, atualiza os dados no banco de dados
         try:
+            genero_id = Filme.buscar_id_genero(self.__genero)#Trpca o nome do gênero pelo id
+            
+            #Atualiza os dados no banco    
             query = "UPDATE filme SET descricao=%s, ano=%s, genero=%s, nota=%s WHERE titulo=%s"
-            values = (self.__descricao, self.__ano, self.__genero, self.__nota, self.__titulo)
+            values = (self.__descricao, self.__ano, genero_id, self.__nota, self.__titulo)
             cursor.execute(query, values)
             print(f"Filme '{self.__titulo}' atualizado com sucesso!")
             
@@ -190,7 +178,7 @@ class Filme:
 
     # Excluir um filme do banco de dados
     def excluir_filme(self, cursor):
-        if not self.pedir_senha():
+        if not self.pedir_senha(): # Requisita senha para o acesso
             print("Senha incorreta! Acesso negado.")
             return
         
