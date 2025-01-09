@@ -1,5 +1,6 @@
 from utils import *
 from Filme import Filme
+from Banco import Banco
 class Avaliacao:
     def __init__(self, usuario, filme, nota_av, comentario=""):
         # Verificar se a nota inserida é válida
@@ -16,9 +17,19 @@ class Avaliacao:
     def usuario(self):
         return self.__usuario
 
+    @usuario.setter
+    def usuario(self, value):
+        self.__usuario = value
+
+
     @property
     def filme(self):
         return self.__filme
+    
+    @filme.setter
+    def filme(self, value):
+        self.__filme = value
+
 
     @property
     def nota_av(self):
@@ -40,30 +51,33 @@ class Avaliacao:
         self.__comentario = value
 
     # Método para salvar a avaliação no banco de dados
-    def salvar_av(self, cursor):
+    def salvar_av(self):
         try:
-            # Verifica se o usuário já avaliou este filme
-            avaliacao_existente = self.consultar_avaliacao(self, cursor)
-            if avaliacao_existente:
-                # Dá a opção do usuário editar a avaliação de um filme que já avaliou
-                resposta = input(f"Você já fez uma avaliação do filme '{self.__filme}', deseja editá-la? (s/n): ").strip().lower()
-                if resposta == 's':
-                    # Se o usuário deseja editar, chama o método de edição
-                    self.editar(cursor)
-                    return  # Sai do método após edição
+            with Banco(host="localhost", user="seu_usuario", password="sua_senha", database="nome_do_banco") as cursor:
+                # Verifica se o usuário já avaliou este filme
+                avaliacao_existente = self.consultar_avaliacao()
+                if avaliacao_existente:
+                    # Dá a opção do usuário editar a avaliação de um filme que já avaliou
+                    resposta = input(f"Você já fez uma avaliação do filme '{self.__filme}', deseja editá-la? (s/n): ").strip().lower()
+                    if resposta == 's':
+                        # Se o usuário deseja editar, chama o método de edição
+                        self.editar()
+                        return  # Sai do método após edição
+                    else:
+                        print(f"A avaliação do filme '{self.__filme}' não será alterada.")
+                        return  # Sai do método sem salvar nada
                 else:
-                    print(f"A avaliação do filme '{self.__filme}' não será alterada.")
-                    return  # Sai do método sem salvar nada
-            else:
-                id_filme = Avaliacao.buscar_id_filme(self.__filme) #Procura o id do respectivo filme
-                # Se não houver avaliação, insere uma nova
-                query = "INSERT INTO avaliacao (usuario, filme, nota, comentario) VALUES (%s, %s, %s, %s)"
-                values = (self.__usuario, id_filme, self.__nota_av, self.__comentario)
-                cursor.execute(query, values)
+                    id_filme = Avaliacao.buscar_id_filme(self.__filme) #Procura o id do respectivo filme
+                    # Se não houver avaliação, insere uma nova
+                    query = "INSERT INTO avaliacao (usuario, filme, nota, comentario) VALUES (%s, %s, %s, %s)"
+                    values = (self.__usuario, id_filme, self.__nota_av, self.__comentario)
+                    cursor.execute(query, values)
+                    # Commit para salvar as alterações no banco
+                    cursor.connection.commit()
 
-                # Atualiza a nota do filme após a inserção da avaliação
-                Filme.atualizar_nota(cursor, id_filme)
-                print(f"Avaliação do filme '{self.__filme}' realizada com sucesso!")
+                    # Atualiza a nota do filme após a inserção da avaliação
+                    Filme.atualizar_nota(cursor, id_filme)
+                    print(f"Avaliação do filme '{self.__filme}' realizada com sucesso!")
 
         except ValueError as e:
             print(f"Erro: {e}")
@@ -71,30 +85,31 @@ class Avaliacao:
             print(f"Erro ao salvar avaliação: {e}")
 
     # Método para consultar uma avaliação existente de um usuário para um filme
-    def consultar_avaliacao(self, cursor):
+    def consultar_avaliacao(self):
         try:
-            # Realiza a consulta no banco de dados usando LIKE para o título do filme
-            query = "SELECT a.nota, a.comentario " \
-                    "FROM avaliacao a " \
-                    "JOIN filme f ON a.filme = f.id " \
-                    "WHERE a.usuario=%s AND f.titulo LIKE %s"
-            cursor.execute(query, (self.__usuario, f"%{self.__filme}%"))
-            resultado = cursor.fetchone()  # Retorna a primeira linha (se houver)
+            with Banco(host="localhost", user="seu_usuario", password="sua_senha", database="nome_do_banco") as cursor:
+                # Realiza a consulta no banco de dados usando LIKE para o título do filme
+                query = "SELECT a.nota, a.comentario " \
+                        "FROM avaliacao a " \
+                        "JOIN filme f ON a.filme = f.id " \
+                        "WHERE a.usuario=%s AND f.titulo LIKE %s"
+                cursor.execute(query, (self.__usuario, f"%{self.__filme}%"))
+                resultado = cursor.fetchone()  # Retorna a primeira linha (se houver)
 
-            if resultado:
-                # Caso exista, retorna os dados da avaliação (nota, comentário)
-                nota, comentario = resultado
-                return {"usuario": self.__usuario, "filme": self.__filme, "\nnota": nota, "\ncomentario": comentario}
-            else:
-                # Caso não exista, exibe uma mensagem e retorna None
-                print("Não há nenhuma avaliação com os dados que você inseriu :(")
+                if resultado:
+                    # Caso exista, retorna os dados da avaliação (nota, comentário)
+                    nota, comentario = resultado
+                    return {"usuario": self.__usuario, "filme": self.__filme, "\nnota": nota, "\ncomentario": comentario}
+                else:
+                    # Caso não exista, exibe uma mensagem e retorna None
+                    print("Não há nenhuma avaliação com os dados que você inseriu :(")
                 return None
         except Exception as e:
             print(f"Erro ao consultar avaliação: {e}")
             return None
 
     # Método para editar a avaliação e atualizar no banco de dados no final
-    def editar(self, cursor):
+    def editar(self):
         print(f"\nVocê está editando a avaliação do filme: {self.__filme} por {self.__usuario}")
         
         #Variáveis booleanas para conferir depois se algo foi editado
@@ -111,7 +126,7 @@ class Avaliacao:
             if opcao == "1":#Editar nota
                 try:
                     nova_nota = float(input("Digite a nova nota (entre 0.5 e 5.0): ").strip())
-                    if validar_nota(nova_nota):#Valida a nova nota
+                    if validar_nota(nova_nota) and 0.5 <= nova_nota <= 5.0:#Valida a nova nota
                         self.nota_av = nova_nota  # Usando a validação (de limite) do setter de nota
                         confirmacao = input(f"Você tem certeza que deseja alterar a nota para '{nova_nota}'? (s/n): ").strip().lower()
                         if confirmacao == "s":
@@ -145,25 +160,32 @@ class Avaliacao:
         # Após todas as edições, atualiza os dados no banco de dados
         if nota_editada or comentario_editado:
             try:
-                id_filme = Avaliacao.buscar_id_filme(self.__filme) #Procura o id do respectivo filme
-                # Atualiza a avaliação no banco de dados
-                query = "UPDATE avaliacao SET nota=%s, comentario=%s WHERE usuario=%s AND filme=%s"
-                values = (self.__nota_av, self.__comentario, self.__usuario, id_filme)
-                cursor.execute(query, values)
-                print(f"Avaliação do filme '{self.__filme}' atualizada com sucesso!")
-                
-                # Atualiza a nota do filme após a alteração da avaliação
-                Filme.atualizar_nota(cursor, self.__filme)
+                with Banco(host="localhost", user="seu_usuario", password="sua_senha", database="nome_do_banco") as cursor:
+                    id_filme = Avaliacao.buscar_id_filme(self.__filme) #Procura o id do respectivo filme
+                    # Atualiza a avaliação no banco de dados
+                    query = "UPDATE avaliacao SET nota=%s, comentario=%s WHERE usuario=%s AND filme=%s"
+                    values = (self.__nota_av, self.__comentario, self.__usuario, id_filme)
+                    cursor.execute(query, values)
+                    # Commit para salvar as alterações no banco
+                    cursor.connection.commit()
+                    print(f"Avaliação do filme '{self.__filme}' atualizada com sucesso!")
+                    
+                    # Atualiza a nota do filme após a alteração da avaliação
+                    Filme.atualizar_nota(cursor, id_filme)
             except Exception as e:
                 print(f"Erro ao atualizar avaliação: {e}")
-  
+    
     # Excluir avaliação
-    def excluir(self, cursor):
+    def excluir(self):
+        
+        id_filme = Avaliacao.buscar_id_filme(self.__filme) #Procura o id do respectivo filme
         try:
-            query = "DELETE FROM avaliacao WHERE usuario=%s AND filme=%s"
-            cursor.execute(query, (self.__usuario, self.__filme))
-            
-            # Atualiza a nota do filme após a exclusão da avaliação
-            Filme.atualizar_nota(cursor, self.__filme)
+            with Banco(host="localhost", user="seu_usuario", password="sua_senha", database="nome_do_banco") as cursor:
+                query = "DELETE FROM avaliacao WHERE usuario=%s AND filme=%s"
+                cursor.execute(query, (self.__usuario, id_filme))
+                # Commit para salvar as alterações no banco
+                cursor.connection.commit()
+                # Atualiza a nota do filme após a exclusão da avaliação
+                Filme.atualizar_nota(cursor, id_filme)
         except Exception as e:
             print(f"Erro ao excluir avaliação: {e}")
