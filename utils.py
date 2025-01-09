@@ -1,13 +1,23 @@
 # Função para atualizar a nota do filme
 def atualizar_nota(cursor, filme):
-    query = "SELECT AVG(nota) FROM avaliacoes WHERE filme=%s"
+    # Calcular a média das avaliações para o filme
+    query = "SELECT AVG(nota) FROM avaliacao WHERE filme=%s"  # Corrigido o nome da tabela para 'avaliacao'
     cursor.execute(query, (filme,))
     resultado = cursor.fetchone()
-    
-    # Verifica a média da nota e atualiza a nota do filme
+
+    # Verifica se há avaliações e calcula a média
     if resultado[0] is not None:
-        return round(resultado[0], 1)  # Retorna a média arredondada
-    return 0.5  # Caso não haja avaliações, retorna 0.5
+        nova_nota = round(resultado[0], 1)  # Média arredondada
+    else:
+        nova_nota = 0.5  # Caso não haja avaliações, atribui a nota mínima
+
+    # Atualiza a nota do filme com a nova média
+    update_query = "UPDATE filme SET nota=%s WHERE id=%s"  # Corrigido o nome da tabela para 'filme' e o campo 'nota'
+    cursor.execute(update_query, (nova_nota, filme))
+    
+    # Commit para garantir que a alteração seja salva
+    cursor.connection.commit()  # Usando 'connection' no lugar de 'conn'
+
 
 # Função para pedir a senha para operações CRUD
 def pedir_senha():
@@ -16,18 +26,16 @@ def pedir_senha():
 
 #Função para validar se a nota são estrelas inteiras ou meias
 def validar_nota(nota):
-    if (nota * 10) % 10 == 0 or (nota * 10) % 10 == 5:
-        return True 
-    return False
+    return nota.is_integer() or (nota * 2).is_integer()  # Valida 0.5, 1.0, 1.5, etc.
 
 def buscar_id_filme(cursor, filme):
     # Busca o ID do filme com base no nome
-    query = "SELECT id FROM filme WHERE nome LIKE %s"
+    query = "SELECT id FROM filme WHERE titulo LIKE %s"
     cursor.execute(query, (f"%{filme}%",))
     filme_result = cursor.fetchone()
     
     if filme_result is None: #Se tentar fazer um comentário para um filme que não existe, exibe uma mensagem de erro
-        raise ValueError(f"Filme '{filme}' não encontrado na tabela de filmes.")
+        raise ValueError(f"Filme '{filme}' não encontrado na tabela de filme.")
                 
     filme_id = filme_result[0]  # Obtém o ID do filme
     return filme_id
